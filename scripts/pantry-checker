@@ -1,0 +1,145 @@
+#!/usr/bin/env -S pkgx php
+
+<?php
+    class PantryChecker {
+        private $homebrew_url_365 = 'https://formulae.brew.sh/api/analytics/install/365d.json';
+        private $homebrew_url_90 = 'https://formulae.brew.sh/api/analytics/install/90d.json';
+        private $homebrew_url_30 = 'https://formulae.brew.sh/api/analytics/install/30d.json';
+        private $homebrew_url = '';
+        private $homebrew_packages = array();
+        private $pkgx_url = 'https://app.tea.xyz/v0/packages/';
+        private $pkgx_packages = array();
+        private $minimum_count = 100000;
+        private $list = '';
+        private $output = '';
+
+
+        public function __construct() {
+            $this->getArgs();
+            $this->main();
+        }
+
+        private function getArgs() {
+            $opts = getopt('m:d:o:h');
+
+            $help = 'This is a small script that checks which packages are missing in the pkgx pantry compared to Homebrew.' . PHP_EOL;
+            $help .= 'The search algorithm is quite primitive, so the results are very approximate.' . PHP_EOL . PHP_EOL;
+
+            $help .= 'Usage: pantry-checker [options...]' . PHP_EOL . PHP_EOL;
+            $help .= 'Options:' . PHP_EOL;
+            $help .= '  -m <num>  Minimum count of installs' . PHP_EOL;
+            $help .= '  -d <30|90|365>  Period (days)' . PHP_EOL;
+            $help .= '  -o <filepath>  Output file' . PHP_EOL;
+            $help .= '  -h  Help' . PHP_EOL . PHP_EOL;
+
+
+            if (isset($opts['h'])) {
+                echo $help;
+                exit;
+            }
+            
+            // Output file
+            if (isset($opts['o'])) {
+                $this->output = $opts['o'];
+                echo 'Output file: ' . $this->output . PHP_EOL;
+            }
+            
+            // Minimum count
+            if (isset($opts['m'])) {
+                $this->minimum_count = (int) $opts['m'];
+                echo 'Minimum count: ' . $this->minimum_count . PHP_EOL;
+            }
+
+            // Homebrew URL
+            if (isset($opts['d'])) {
+                switch ($opts['d']) {
+                    case 30:
+                        $this->homebrew_url = $this->homebrew_url_30;
+                        echo 'Homebrew URL: ' . $this->homebrew_url_30 . PHP_EOL;
+                        break;
+                    case 90:
+                        $this->homebrew_url = $this->homebrew_url_90;
+                        echo 'Homebrew URL: ' . $this->homebrew_url_90 . PHP_EOL;
+                        break;
+                    case 365:
+                        $this->homebrew_url = $this->homebrew_url_365;
+                        echo 'Homebrew URL: ' . $this->homebrew_url_365 . PHP_EOL;
+                        break;
+                    default:
+                        echo 'Invalid period value. Defaulting to 365 days.' . PHP_EOL;
+                        $this->homebrew_url = $this->homebrew_url_365;
+                        echo 'Homebrew URL: ' . $this->homebrew_url_365 . PHP_EOL;
+                        break;
+                }
+            } else {
+                $this->homebrew_url = $this->homebrew_url_365;
+                echo 'Homebrew URL: ' . $this->homebrew_url_365 . PHP_EOL;
+            }
+        }
+
+
+        private function main() {
+            $this->getHomebrewPackages();
+            $this->getPkgxPackages();
+
+            foreach ($this->homebrew_packages as $package) {
+                $package_installs = (int) str_replace(',', '', $package['count']);
+                if ($package_installs < $this->minimum_count) {
+                    continue;
+                }
+
+                $pkgx_results = $this->searchPkgxPackage($package['formula']);
+
+                if (count($pkgx_results) === 0) {
+                    echo $package['formula'] . ' - ' . $package['count'] . ' installs; pkgx - not found' . PHP_EOL;
+
+                    $this->list .= $package['formula'] . PHP_EOL;
+                }
+
+            }
+
+            if ($this->output) {
+                // directory does not exist, so lets create it.
+                if (!is_dir(dirname($this->output))) {
+                    mkdir(dirname($this->output), 0777, true);
+                }
+
+                // write the file
+                file_put_contents($this->output, $this->list);
+            }
+        }
+
+        private function getHomebrewPackages() {
+            $homebrew_packages = json_decode(file_get_contents($this->homebrew_url), true);
+
+            $this->homebrew_packages = isset($homebrew_packages['items']) ? $homebrew_packages['items'] : array();
+        }
+
+        private function getPkgxPackages() {
+            $pkgx_packages = json_decode(file_get_contents($this->pkgx_url), true);
+            
+            $this->pkgx_packages = isset($pkgx_packages) ? $pkgx_packages : array();
+        }
+
+        private function searchPkgxPackage($string) {
+            $results = array();
+
+            $parts = explode('@', $string);
+
+            $search_string = isset($parts[0]) ? $parts[0] : false;
+
+            if (!$search_string) {
+                return array();
+            }
+
+            foreach ($this->pkgx_packages as $package) {
+                if (strpos($package, $search_string) !== false) {
+                    $results[] = $package;
+                }
+            }
+
+            return $results;
+        }
+    }
+
+    $pantry_checker = new PantryChecker();
