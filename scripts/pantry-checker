@@ -141,6 +141,21 @@
             // remove the 'lib' prefix
             $search_string = str_replace('lib', '', $search_string);
 
+            // remove the '-cli' suffix
+            $search_string = str_replace('-cli', '', $search_string);
+
+            // remove special characters
+            $search_string = str_replace(array('+'), '', $search_string);
+
+            // let's check if the string has '/'
+            if (strpos($search_string, '/') !== false) {
+                // if it does, let's split it into parts
+                $parts = explode('/', $search_string);
+
+                // we need to get the last part
+                $search_string = $parts[count($parts) - 1];
+            }
+
             // if the string is empty, return an empty array
             if (!$search_string) {
                 return array();
@@ -148,6 +163,11 @@
             
             // loop through the pkgx packages and search for the string
             foreach ($this->pkgx_packages as $package) {
+
+                // strtolower package name and search string
+                $package = strtolower($package);
+                $search_string = strtolower($search_string);
+
                 if (strpos($package, $search_string) !== false) {
                     $results[] = $package;
                 }
@@ -170,7 +190,8 @@
                 'dart-lang/dart/dart', 'python-typing-extensions',
                 'bdw-gc', 'hashicorp/tap/terraform', 'libvidstab',
                 'docker-compose', 'py3cairo', 'pygobject3', 'gnu-sed',
-                'hicolor-icon-theme', 'utf8cpp'
+                'hicolor-icon-theme', 'utf8cpp', 'swiftlint', 'docker-compose',
+                'mysql-client', 'pyenv', 'tidy-html5'
             );
         }
 
