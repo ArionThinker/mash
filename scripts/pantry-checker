@@ -2,17 +2,17 @@
 
 <?php
     class PantryChecker {
-        private $homebrew_url_365 = 'https://formulae.brew.sh/api/analytics/install/365d.json';
-        private $homebrew_url_90 = 'https://formulae.brew.sh/api/analytics/install/90d.json';
-        private $homebrew_url_30 = 'https://formulae.brew.sh/api/analytics/install/30d.json';
-        private $homebrew_url = '';
+        private $homebrew_url_365  = 'https://formulae.brew.sh/api/analytics/install/365d.json';
+        private $homebrew_url_90   = 'https://formulae.brew.sh/api/analytics/install/90d.json';
+        private $homebrew_url_30   = 'https://formulae.brew.sh/api/analytics/install/30d.json';
+        private $homebrew_url      = '';
         private $homebrew_packages = array();
-        private $pkgx_url = 'https://app.tea.xyz/v0/packages/';
-        private $pkgx_packages = array();
-        private $minimum_count = 100000;
-        private $list = '';
-        private $output = '';
-        private $exceptions = array();
+        private $pkgx_url          = 'https://app.tea.xyz/v0/packages/';
+        private $pkgx_packages     = array();
+        private $minimum_count     = 100000;
+        private $list              = '';
+        private $output            = '';
+        private $exceptions        = array();
 
 
         public function __construct() {
@@ -24,9 +24,9 @@
         }
 
         private function getArgs() {
-            $opts = getopt('m:d:o:h');
+            $opts  = getopt('m:d:o:h');
 
-            $help = 'This is a small script that checks which packages are missing in the pkgx pantry compared to Homebrew.' . PHP_EOL;
+            $help  = 'This is a small script that checks which packages are missing in the pkgx pantry compared to Homebrew.' . PHP_EOL;
             $help .= 'The search algorithm is quite primitive, so the results are very approximate.' . PHP_EOL . PHP_EOL;
 
             $help .= 'Usage: pantry-checker [options...]' . PHP_EOL . PHP_EOL;
@@ -37,6 +37,7 @@
             $help .= '  -h  Help' . PHP_EOL . PHP_EOL;
 
 
+            // Help
             if (isset($opts['h'])) {
                 echo $help;
                 exit;
@@ -83,6 +84,7 @@
 
 
         private function main() {
+            // loop through the homebrew packages
             foreach ($this->homebrew_packages as $package) {
                 $package_installs = (int) str_replace(',', '', $package['count']);
                 if ($package_installs < $this->minimum_count) {
@@ -114,30 +116,37 @@
         }
 
         private function getHomebrewPackages() {
+            // get the homebrew packages from the homebrew API
             $homebrew_packages = json_decode(file_get_contents($this->homebrew_url), true);
 
             $this->homebrew_packages = isset($homebrew_packages['items']) ? $homebrew_packages['items'] : array();
         }
 
         private function getPkgxPackages() {
+            // get the pkgx packages from the pkgx API
             $pkgx_packages = json_decode(file_get_contents($this->pkgx_url), true);
             
             $this->pkgx_packages = isset($pkgx_packages) ? $pkgx_packages : array();
         }
 
         private function searchPkgxPackage($string) {
+            // search the pkgx packages for a string
             $results = array();
 
+            // split the string into parts (version)
             $parts = explode('@', $string);
 
             $search_string = isset($parts[0]) ? $parts[0] : false;
 
+            // remove the 'lib' prefix
             $search_string = str_replace('lib', '', $search_string);
 
+            // if the string is empty, return an empty array
             if (!$search_string) {
                 return array();
             }
-
+            
+            // loop through the pkgx packages and search for the string
             foreach ($this->pkgx_packages as $package) {
                 if (strpos($package, $search_string) !== false) {
                     $results[] = $package;
@@ -148,32 +157,25 @@
         }
 
         private function setExceptions() {
-            $this->exceptions[] = 'ca-certificates';
-            $this->exceptions[] = 'libx11';
-            $this->exceptions[] = 'jpeg-xl';
-            $this->exceptions[] = 'libnghttp2';
-            $this->exceptions[] = 'awscli';
-            $this->exceptions[] = 'icu4c';
-            $this->exceptions[] = 'little-cms2';
-            $this->exceptions[] = 'pcre2';
-            $this->exceptions[] = 'libxcb';
-            $this->exceptions[] = 'xorgproto';
-            $this->exceptions[] = 'krb5';
-            $this->exceptions[] = 'libxext';
-            $this->exceptions[] = 'libvmaf';
-            $this->exceptions[] = 'libxau';
-            $this->exceptions[] = 'sdl2';
-            $this->exceptions[] = 'graphite2';
-            $this->exceptions[] = 'tcl-tk';
-            $this->exceptions[] = 'gnu-tar';
-            $this->exceptions[] = 'mongosh';
-            $this->exceptions[] = 'python-markupsafe';
-            $this->exceptions[] = 'gtk+3';
-            $this->exceptions[] = 'hdf5';
-            $this->exceptions[] = 'svt-av1';
+            // these packages are in the pkgx pantry
+            // but they names is different from the homebrew formula
+            $this->exceptions = array(
+                'ca-certificates', 'libx11', 'jpeg-xl', 'libnghttp2',
+                'awscli', 'icu4c', 'little-cms2', 'pcre2', 'libxcb',
+                'xorgproto', 'krb5', 'libxext', 'libvmaf', 'libxau',
+                'sdl2', 'graphite2', 'tcl-tk', 'gnu-tar', 'mongosh',
+                'python-markupsafe', 'gtk+3', 'hdf5', 'svt-av1',
+                'at-spi2-core', 'jupyterlab', 'glib-networking',
+                'apache-arrow', 'argocd', 'gnu-getopt', 'flyctl',
+                'dart-lang/dart/dart', 'python-typing-extensions',
+                'bdw-gc', 'hashicorp/tap/terraform', 'libvidstab',
+                'docker-compose', 'py3cairo', 'pygobject3', 'gnu-sed',
+                'hicolor-icon-theme', 'utf8cpp'
+            );
         }
 
         private function formatTextAsTable($filename) {
+            // format the output file as a table
             $text = file_get_contents($filename);
 
             $lines = explode(PHP_EOL, $text);
