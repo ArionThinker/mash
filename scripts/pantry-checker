@@ -7,7 +7,7 @@
         private $homebrew_url_30   = 'https://formulae.brew.sh/api/analytics/install/30d.json';
         private $homebrew_url      = '';
         private $homebrew_packages = array();
-        private $pkgx_url          = 'https://app.tea.xyz/v0/packages/';
+        private $pkgx_url          = 'https://pkgx.dev/pkgs/index.json';
         private $pkgx_packages     = array();
         private $minimum_count     = 100000;
         private $list              = '';
@@ -165,7 +165,7 @@
             foreach ($this->pkgx_packages as $package) {
 
                 // strtolower package name and search string
-                $package = strtolower($package);
+                $package = strtolower($package['project']);
                 $search_string = strtolower($search_string);
 
                 if (strpos($package, $search_string) !== false) {
