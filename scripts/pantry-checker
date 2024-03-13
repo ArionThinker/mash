@@ -144,6 +144,9 @@
             // remove the '-cli' suffix
             $search_string = str_replace('-cli', '', $search_string);
 
+            // remove the 'python-' prefix
+            $search_string = str_replace('python-', '', $search_string);
+
             // remove special characters
             $search_string = str_replace(array('+'), '', $search_string);
 
