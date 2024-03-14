@@ -172,10 +172,13 @@
 
                 // strtolower package name and search string
                 $package = strtolower($package['project']);
+                $package_name = isset($package['name']) ? strtolower($package['name']) : '';
                 $search_string = strtolower($search_string);
 
                 if (strpos($package, $search_string) !== false) {
                     $results[] = $package;
+                } else if ($package_name && strpos($package_name, $search_string) !== false) {
+                    $results[] = $package_name;
                 }
             }
 
@@ -186,6 +189,7 @@
             // these packages are in the pkgx pantry
             // but they names is different from the homebrew formula
             $this->exceptions = array(
+                /* exisiting in pkgx pantry */
                 'ca-certificates', 'libx11', 'jpeg-xl', 'libnghttp2',
                 'awscli', 'icu4c', 'little-cms2', 'pcre2', 'libxcb',
                 'xorgproto', 'krb5', 'libxext', 'libvmaf', 'libxau',
@@ -197,7 +201,13 @@
                 'bdw-gc', 'hashicorp/tap/terraform', 'libvidstab',
                 'docker-compose', 'py3cairo', 'pygobject3', 'gnu-sed',
                 'hicolor-icon-theme', 'utf8cpp', 'swiftlint', 'docker-compose',
-                'mysql-client', 'pyenv', 'tidy-html5'
+                'mysql-client', 'pyenv', 'tidy-html5', 'the_silver_searcher', 
+                'telnet', 'aws-sam-cli', 'python-urllib3', 'python-click',
+                'ddev/ddev/ddev', 'libimagequant', 'fdk-aac', 'sonar-scanner',
+                'mosh', 'jandedobbeleer/oh-my-posh/oh-my-posh', 'xcodesorg/made/xcodes',
+                'libmng', 'python-hatchling', 'oh-my-posh', 'xcodes',
+                /* removed by owner */ 
+                'moreutils', 'atuin'
             );
         }
 
